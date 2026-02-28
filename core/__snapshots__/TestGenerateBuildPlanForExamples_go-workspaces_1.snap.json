@@ -85,12 +85,12 @@
      "src": "go.work"
     },
     {
-     "dest": "api\\go.mod",
-     "src": "api\\go.mod"
+     "dest": "api/go.mod",
+     "src": "api/go.mod"
     },
     {
-     "dest": "shared\\go.mod",
-     "src": "shared\\go.mod"
+     "dest": "shared/go.mod",
+     "src": "shared/go.mod"
     },
     {
      "cmd": "go mod download"

@@ -80,9 +80,6 @@
    ],
    "commands": [
     {
-     "cmd": "chmod +x gradlew"
-    },
-    {
      "cmd": "./gradlew clean build -x check -x test -Pproduction"
     }
    ],

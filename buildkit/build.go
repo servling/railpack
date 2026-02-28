@@ -255,12 +255,12 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 		}
 		defer f.Close()
 
-		// Try to find the best container engine (prefer podman, then docker)
+		// Try to find the best container engine (prefer docker, fall back to podman)
 		engine := "docker"
-		if p, err := exec.LookPath("podman"); err == nil {
-			engine = p
-		} else if d, err := exec.LookPath("docker"); err == nil {
+		if d, err := exec.LookPath("docker"); err == nil {
 			engine = d
+		} else if p, err := exec.LookPath("podman"); err == nil {
+			engine = p
 		}
 
 		args := []string{"load", "-i", f.Name()}
