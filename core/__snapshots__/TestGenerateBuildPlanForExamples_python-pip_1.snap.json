@@ -1,5 +1,10 @@
 {
  "caches": {
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  },
   "pip": {
    "directory": "/opt/pip-cache",
    "type": "shared"
@@ -51,6 +56,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

@@ -3,6 +3,11 @@
   "gradle": {
    "directory": "/root/.gradle",
    "type": "shared"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
   }
  },
  "deploy": {
@@ -34,6 +39,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
@@ -72,6 +80,9 @@
    ],
    "commands": [
     {
+     "cmd": "chmod +x gradlew"
+    },
+    {
      "cmd": "./gradlew clean build -x check -x test -Pproduction"
     }
    ],
@@ -95,6 +106,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

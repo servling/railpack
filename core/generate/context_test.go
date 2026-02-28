@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -159,6 +160,9 @@ func TestGenerateContextDockerignore(t *testing.T) {
 	})
 
 	t.Run("context creation fails with invalid dockerignore", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("chmod 0000 does not restrict access on Windows")
+		}
 		// Create a temporary directory with an inaccessible .dockerignore
 		tempDir, err := os.MkdirTemp("", "dockerignore-test")
 		require.NoError(t, err)

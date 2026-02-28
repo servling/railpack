@@ -10,6 +10,12 @@
   },
   "bun-install": {
    "directory": "/root/.bun/install/cache",
+   "global": true,
+   "type": "shared"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
    "type": "shared"
   },
   "node-modules": {
@@ -59,6 +65,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

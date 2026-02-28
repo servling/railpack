@@ -8,12 +8,18 @@
    "directory": "/var/lib/apt/lists",
    "type": "locked"
   },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "yarn-install": {
    "directory": "/app/.yarn/cache",
+   "global": true,
    "type": "shared"
   }
  },
@@ -66,6 +72,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
@@ -121,6 +130,10 @@
     {
      "dest": "package.json",
      "src": "package.json"
+    },
+    {
+     "dest": "tsconfig.json",
+     "src": "tsconfig.json"
     },
     {
      "dest": "yarn.lock",

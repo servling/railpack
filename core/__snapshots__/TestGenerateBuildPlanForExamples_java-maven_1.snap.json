@@ -3,6 +3,11 @@
   "maven": {
    "directory": ".m2/repository",
    "type": "shared"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
   }
  },
  "deploy": {
@@ -34,6 +39,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
@@ -95,6 +103,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

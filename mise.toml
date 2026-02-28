@@ -62,7 +62,8 @@ go test -v ./integration_tests -run "TestExamplesIntegration/$example_name"
 
 # update all test snapshots, if you've updated a example/ project, run this to update the snapshots
 [tasks.test-update-snapshots]
-run = "UPDATE_SNAPS=true go test -short ./..."
+env = { UPDATE_SNAPS = "true" }
+run = "go test -short ./..."
 
 # linting, formatting, and static analysis
 [tasks.check]

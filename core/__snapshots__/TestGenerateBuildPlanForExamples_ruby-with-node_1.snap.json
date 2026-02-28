@@ -8,12 +8,18 @@
    "directory": "/var/lib/apt/lists",
    "type": "locked"
   },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "npm-install": {
    "directory": "/root/.npm",
+   "global": true,
    "type": "shared"
   }
  },
@@ -93,6 +99,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

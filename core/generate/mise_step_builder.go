@@ -298,6 +298,8 @@ func (b *MiseStepBuilder) Build(p *plan.BuildPlan, options *BuildStepOptions) er
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
 			}),
 		})
+
+		step.Caches = append(step.Caches, options.Caches.AddGlobalCache("mise", "/mise/cache"))
 	}
 
 	step.Assets = b.Assets

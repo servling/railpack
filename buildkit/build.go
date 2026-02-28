@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -122,23 +124,16 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 
 	ch := make(chan *client.SolveStatus)
 
-	var pipeR *io.PipeReader
-	var pipeW *io.PipeWriter
-	errCh := make(chan error, 1)
-
-	// Only set up pipe and docker load if we're not saving to a directory
+	var imageTempFile *os.File
 	if opts.OutputDir == "" {
-		// Create a pipe to connect buildkit output to docker load
-		pipeR, pipeW = io.Pipe()
-		defer pipeR.Close()
-
-		// Pipe the image into `docker load`
-		go func() {
-			cmd := exec.Command("docker", "load")
-			cmd.Stdin = pipeR
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			errCh <- cmd.Run()
+		var err error
+		imageTempFile, err = os.CreateTemp("", "railpack-image-*.tar")
+		if err != nil {
+			return fmt.Errorf("failed to create temp file for image: %w", err)
+		}
+		defer func() {
+			imageTempFile.Close()
+			os.Remove(imageTempFile.Name())
 		}()
 	}
 
@@ -197,7 +192,7 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 					"containerimage.config": string(imageBytes),
 				},
 				Output: func(_ map[string]string) (io.WriteCloser, error) {
-					return pipeW, nil
+					return imageTempFile, nil
 				},
 			},
 		},
@@ -245,18 +240,42 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 	// Wait for progress monitoring to complete
 	<-progressDone
 
-	if pipeW != nil {
-		pipeW.Close()
-	}
-
 	if err != nil {
 		return fmt.Errorf("failed to solve: %w", err)
 	}
 
-	// Only wait for docker load if we used it
+	// Only load image if we didn't export to a directory
 	if opts.OutputDir == "" {
-		if err := <-errCh; err != nil {
-			return fmt.Errorf("docker load failed: %w", err)
+		log.Infof("Export finished, loading image into docker...")
+
+		// Reopen the file for reading since BuildKit closed the write handle
+		f, err := os.Open(imageTempFile.Name())
+		if err != nil {
+			return fmt.Errorf("failed to open temp image file: %w", err)
+		}
+		defer f.Close()
+
+		// Try to find the best container engine (prefer podman, then docker)
+		engine := "docker"
+		if p, err := exec.LookPath("podman"); err == nil {
+			engine = p
+		} else if d, err := exec.LookPath("docker"); err == nil {
+			engine = d
+		}
+
+		args := []string{"load", "-i", f.Name()}
+		// On Windows, wrap .cmd/.bat in cmd /c
+		if runtime.GOOS == "windows" && (strings.HasSuffix(strings.ToLower(engine), ".cmd") || strings.HasSuffix(strings.ToLower(engine), ".bat")) {
+			args = append([]string{"/c", engine}, args...)
+			engine = "cmd"
+		}
+
+		log.Infof("Running: %s %s", engine, strings.Join(args, " "))
+		cmd := exec.Command(engine, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("container engine load failed (%s): %w", engine, err)
 		}
 	}
 
@@ -273,10 +292,12 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 }
 
 func getImageName(appDir string) string {
-	parts := strings.Split(appDir, string(os.PathSeparator))
-	name := parts[len(parts)-1]
-	if name == "" {
-		name = "railpack-app" // Fallback if path ends in separator
+	if appDir == "" || strings.HasSuffix(appDir, string(filepath.Separator)) || strings.HasSuffix(appDir, "/") {
+		return "railpack-app"
+	}
+	name := filepath.Base(appDir)
+	if name == "" || name == "." {
+		return "railpack-app"
 	}
 	// Docker requires image names to be lowercase
 	return strings.ToLower(name)

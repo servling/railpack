@@ -7,6 +7,11 @@
   "cargo_registry": {
    "directory": "/root/.cargo/registry",
    "type": "shared"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
   }
  },
  "deploy": {
@@ -34,6 +39,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

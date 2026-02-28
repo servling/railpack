@@ -1,6 +1,13 @@
 
 [TestGenerateContext - 1]
 {
+ "caches": {
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  }
+ },
  "deploy": {
   "base": {
    "image": "ghcr.io/railwayapp/railpack-runtime:latest"
@@ -30,6 +37,9 @@
    "assets": {
     "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.13.1\"\n"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

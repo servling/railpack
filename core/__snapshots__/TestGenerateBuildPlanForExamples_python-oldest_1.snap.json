@@ -1,4 +1,11 @@
 {
+ "caches": {
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  }
+ },
  "deploy": {
   "base": {
    "image": "ghcr.io/railwayapp/railpack-runtime:latest"
@@ -42,6 +49,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

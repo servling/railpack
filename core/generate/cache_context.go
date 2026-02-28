@@ -26,9 +26,22 @@ func (c *CacheContext) AddCache(name string, directory string) string {
 }
 
 func (c *CacheContext) AddCacheWithType(name string, directory string, cacheType string) string {
+	return c.AddCacheInternal(name, directory, cacheType, false)
+}
+
+func (c *CacheContext) AddGlobalCache(name string, directory string) string {
+	return c.AddGlobalCacheWithType(name, directory, plan.CacheTypeShared)
+}
+
+func (c *CacheContext) AddGlobalCacheWithType(name string, directory string, cacheType string) string {
+	return c.AddCacheInternal(name, directory, cacheType, true)
+}
+
+func (c *CacheContext) AddCacheInternal(name string, directory string, cacheType string, global bool) string {
 	sanitizedName := sanitizeCacheName(name)
 	c.Caches[sanitizedName] = plan.NewCache(directory)
 	c.Caches[sanitizedName].Type = cacheType
+	c.Caches[sanitizedName].Global = global
 	return sanitizedName
 }
 

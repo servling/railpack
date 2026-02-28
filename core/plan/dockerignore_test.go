@@ -3,6 +3,7 @@ package plan
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/railwayapp/railpack/core/app"
@@ -60,6 +61,9 @@ func TestCheckAndParseDockerignore(t *testing.T) {
 	})
 
 	t.Run("inaccessible dockerignore", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("chmod 0000 does not restrict access on Windows")
+		}
 		// Create a temporary directory and file
 		tempDir, err := os.MkdirTemp("", "dockerignore-test")
 		require.NoError(t, err)
@@ -175,6 +179,9 @@ func TestDockerignoreContext(t *testing.T) {
 	})
 
 	t.Run("parse error handling", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("chmod 0000 does not restrict access on Windows")
+		}
 		// Create a temporary directory with an inaccessible .dockerignore
 		tempDir, err := os.MkdirTemp("", "dockerignore-test")
 		require.NoError(t, err)

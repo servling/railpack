@@ -12,12 +12,18 @@
    "directory": "/opt/cache/composer",
    "type": "shared"
   },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "npm-install": {
    "directory": "/root/.npm",
+   "global": true,
    "type": "shared"
   },
   "vite": {
@@ -53,6 +59,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
@@ -217,6 +226,14 @@
     {
      "dest": "package.json",
      "src": "package.json"
+    },
+    {
+     "dest": "tsconfig.json",
+     "src": "tsconfig.json"
+    },
+    {
+     "dest": "vite.config.ts",
+     "src": "vite.config.ts"
     },
     {
      "cmd": "npm ci"

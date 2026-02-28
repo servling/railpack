@@ -8,6 +8,11 @@
    "directory": "/var/lib/apt/lists",
    "type": "locked"
   },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
+  },
   "next": {
    "directory": "/app/.next/cache",
    "type": "shared"
@@ -18,6 +23,7 @@
   },
   "npm-install": {
    "directory": "/root/.npm",
+   "global": true,
    "type": "shared"
   }
  },
@@ -68,6 +74,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
@@ -112,12 +121,20 @@
      "cmd": "mkdir -p /app/node_modules/.cache"
     },
     {
+     "dest": "next.config.ts",
+     "src": "next.config.ts"
+    },
+    {
      "dest": "package-lock.json",
      "src": "package-lock.json"
     },
     {
      "dest": "package.json",
      "src": "package.json"
+    },
+    {
+     "dest": "tsconfig.json",
+     "src": "tsconfig.json"
     },
     {
      "cmd": "npm ci"

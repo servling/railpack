@@ -11,6 +11,11 @@
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "global": true,
+   "type": "shared"
   }
  },
  "deploy": {
@@ -32,6 +37,9 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "mise"
+   ],
    "commands": [
     {
      "path": "/mise/shims"

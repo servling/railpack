@@ -17,7 +17,7 @@ const (
 	PackageManagerYarn1     PackageManager = "yarn1"
 	PackageManagerYarnBerry PackageManager = "yarnberry"
 
-	DEFAULT_PNPM_VERSION = "9"
+	DEFAULT_PNPM_VERSION = "10"
 )
 
 func (p PackageManager) Name() string {
@@ -61,15 +61,22 @@ func (p PackageManager) installDependencies(ctx *generate.GenerateContext, works
 	}
 
 	usesLocalFile := p.usesLocalFile(ctx)
+	surgicalInstall := ctx.Env.IsConfigVariableTruthy("NODE_INSTALL_SURGICAL")
 
-	// If there are any pre/post install scripts, we need the entire app to be copied
-	// This is to handle things like patch-package
-	if hasPreInstall || hasPostInstall || hasPrepare || usesLocalFile {
+	// If there are any pre/post install scripts, we usually need the entire app to be copied
+	// However, this can be extremely slow. We allow a "surgical" install mode which only
+	// copies the supporting files (lockfiles, configs, patches, etc.)
+	if (hasPreInstall || hasPostInstall || hasPrepare || usesLocalFile) && !surgicalInstall {
 		install.AddInput(ctx.NewLocalLayer())
 
 		// Use all secrets for the install step if there are any pre/post install scripts
 		install.UseSecrets([]string{"*"})
 	} else {
+		if surgicalInstall {
+			ctx.Logger.LogInfo("Using surgical install mode (skipping full source copy)")
+		}
+
+		// Add all supporting files (lockfiles, framework configs, etc)
 		files := p.SupportingInstallFiles(ctx)
 		for _, file := range files {
 			install.AddCommands([]plan.Command{
@@ -85,15 +92,15 @@ func (p PackageManager) installDependencies(ctx *generate.GenerateContext, works
 func (p PackageManager) GetInstallCache(ctx *generate.GenerateContext) string {
 	switch p {
 	case PackageManagerNpm:
-		return ctx.Caches.AddCache("npm-install", "/root/.npm")
+		return ctx.Caches.AddGlobalCache("npm-install", "/root/.npm")
 	case PackageManagerPnpm:
-		return ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3")
+		return ctx.Caches.AddGlobalCache("pnpm-install", "/root/.local/share/pnpm/store/v3")
 	case PackageManagerBun:
-		return ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache")
+		return ctx.Caches.AddGlobalCache("bun-install", "/root/.bun/install/cache")
 	case PackageManagerYarn1:
-		return ctx.Caches.AddCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked)
+		return ctx.Caches.AddGlobalCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked)
 	case PackageManagerYarnBerry:
-		return ctx.Caches.AddCache("yarn-install", "/app/.yarn/cache")
+		return ctx.Caches.AddGlobalCache("yarn-install", "/app/.yarn/cache")
 	default:
 		return ""
 	}
@@ -226,7 +233,8 @@ func (p PackageManager) GetInstallFolder(ctx *generate.GenerateContext) []string
 // SupportingInstallFiles returns a list of files that are needed to install dependencies
 func (p PackageManager) SupportingInstallFiles(ctx *generate.GenerateContext) []string {
 	// Use brace expansion for single filesystem traversal instead of 16 separate globs
-	pattern := "**/{package.json,package-lock.json,pnpm-workspace.yaml,yarn.lock,pnpm-lock.yaml,bun.lockb,bun.lock,.yarn,.pnp.*,.yarnrc.yml,.npmrc,.node-version,.nvmrc,patches,.pnpm-patches,prisma}"
+	// Expanded to include framework config files and TS configs which are often needed for postinstall/prepare scripts
+	pattern := "**/{package.json,package-lock.json,pnpm-workspace.yaml,yarn.lock,pnpm-lock.yaml,bun.lockb,bun.lock,.yarn,.pnp.*,.yarnrc.yml,.npmrc,.node-version,.nvmrc,patches,.pnpm-patches,prisma,nuxt.config.*,next.config.*,vite.config.*,astro.config.*,tsconfig.json}"
 
 	var allFiles []string
 
@@ -261,6 +269,12 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 
 	// Pnpm
 	if p == PackageManagerPnpm {
+		// pnpm projects often have native dependencies (especially when using onlyBuiltDependencies)
+		// that require build tools like node-gyp, python3, g++, and make.
+		packages.AddSupportingAptPackage("python3")
+		packages.AddSupportingAptPackage("g++")
+		packages.AddSupportingAptPackage("make")
+
 		pnpm := packages.Default("pnpm", DEFAULT_PNPM_VERSION)
 
 		// Prefer explicit version from package.json engines over defaults/lockfile
@@ -270,12 +284,18 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 
 		lockfile, err := ctx.App.ReadFile("pnpm-lock.yaml")
 		if err == nil {
-			if strings.HasPrefix(lockfile, "lockfileVersion: 5.3") {
+			// Lockfile v5.3 -> pnpm v6
+			if strings.HasPrefix(lockfile, "lockfileVersion: 5.3") || strings.HasPrefix(lockfile, "lockfileVersion: '5.3'") {
 				packages.Version(pnpm, "6", "pnpm-lock.yaml")
-			} else if strings.HasPrefix(lockfile, "lockfileVersion: 5.4") {
+			} else if strings.HasPrefix(lockfile, "lockfileVersion: 5.4") || strings.HasPrefix(lockfile, "lockfileVersion: '5.4'") {
+				// Lockfile v5.4 -> pnpm v7
 				packages.Version(pnpm, "7", "pnpm-lock.yaml")
-			} else if strings.HasPrefix(lockfile, "lockfileVersion: '6.0'") {
+			} else if strings.HasPrefix(lockfile, "lockfileVersion: 6.0") || strings.HasPrefix(lockfile, "lockfileVersion: '6.0'") {
+				// Lockfile v6.0 -> pnpm v8
 				packages.Version(pnpm, "8", "pnpm-lock.yaml")
+			} else if strings.HasPrefix(lockfile, "lockfileVersion: 9.0") || strings.HasPrefix(lockfile, "lockfileVersion: '9.0'") {
+				// Lockfile v9.0 -> pnpm v10 (default)
+				packages.Version(pnpm, DEFAULT_PNPM_VERSION, "pnpm-lock.yaml")
 			}
 		}
 

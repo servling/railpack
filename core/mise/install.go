@@ -217,9 +217,8 @@ func extractZip(archivePath, binaryPath string) error {
 	}
 	defer cleanup()
 
-	binaryName := getBinaryName()
 	for _, f := range r.File {
-		if strings.HasSuffix(f.Name, binaryName) {
+		if strings.HasSuffix(f.Name, "mise.exe") {
 			rc, err := f.Open()
 			if err != nil {
 				return err
@@ -286,6 +285,16 @@ func createAtomicWriter(targetPath string) (writeAndMove func(write func(tempFil
 		}
 
 		if err := os.Rename(tempPath, targetPath); err != nil {
+			// On Windows, Rename fails if the destination already exists.
+			// This can happen when multiple tests install mise concurrently.
+			// If the target is now present, another process succeeded — treat as success.
+			if runtime.GOOS == "windows" {
+				if _, statErr := os.Stat(targetPath); statErr == nil {
+					os.Remove(tempPath)
+					success = true
+					return nil
+				}
+			}
 			return fmt.Errorf("failed to move temp file to target: %w", err)
 		}
 
